@@ -81,6 +81,8 @@ npm run dev
 
 ---
 
+## Disclamer !!
+This repository is an AI coding experiment. I check regularly the code to make sure nothing suspicious is added but please double check yourself.
 ## 📄 License
 
 [MIT](LICENSE)
