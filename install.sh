@@ -108,16 +108,18 @@ install_systemd_root() {
     echo "Installing NightCap system-wide systemd service..."
     chmod +x "${NOTIFY_SCRIPT}"
 
-    cat <<EOF > /etc/systemd/system/nightcap-notify.service
+    # Write atomically: render to temp file, then move into place
+    TMPDIR_ETC="$(mktemp -d /etc/systemd/system/nightcap.XXXXXX)"
+    cat <<EOF > "${TMPDIR_ETC}/nightcap-notify.service"
 [Unit]
 Description=NightCap System Reminder Service
 
 [Service]
 Type=oneshot
-ExecStart=${NOTIFY_SCRIPT} "NightCap System Reminder 🍷" "Scheduled system break reminder!" "critical"
+ExecStart="${NOTIFY_SCRIPT}" "NightCap System Reminder 🍷" "Scheduled system break reminder!" "critical"
 EOF
 
-    cat <<EOF > /etc/systemd/system/nightcap-notify.timer
+    cat <<EOF > "${TMPDIR_ETC}/nightcap-notify.timer"
 [Unit]
 Description=NightCap System Reminder Timer
 
@@ -128,6 +130,11 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 EOF
+
+    # Move both files into place only after they are fully written
+    install -m 644 "${TMPDIR_ETC}/nightcap-notify.service" /etc/systemd/system/nightcap-notify.service
+    install -m 644 "${TMPDIR_ETC}/nightcap-notify.timer" /etc/systemd/system/nightcap-notify.timer
+    rm -rf "${TMPDIR_ETC}"
 
     systemctl daemon-reload
     systemctl enable --now nightcap-notify.timer
