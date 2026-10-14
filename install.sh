@@ -33,14 +33,14 @@ install_cron() {
     
     # Export current DISPLAY and DBUS_SESSION_BUS_ADDRESS for GUI notification support in cron
     USER_ENV="DISPLAY=${DISPLAY:-:0} DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-"unix:path=/run/user/$(id -u)/bus"}"
-    CRON_CMD="${USER_ENV} ${NOTIFY_SCRIPT} 'NightCap Wind Down 🍷' 'Time to step away from the screen!' 'normal' >> ${HOME}/.nightcap.log 2>&1"
-    CRON_JOB="${CRON_SCHEDULE} ${CRON_CMD}"
+    CRON_CMD="${USER_ENV} \"${NOTIFY_SCRIPT}\" 'NightCap Wind Down 🍷' 'Time to step away from the screen!' 'normal' >> \"${HOME}/.nightcap.log\" 2>&1"
+    CRON_JOB="${CRON_SCHEDULE} ${CRON_CMD} # NightCap-managed"
 
     # Append to current user crontab without duplicating
     CURRENT_CRONTAB="$(crontab -l 2>/dev/null || true)"
-    if echo "${CURRENT_CRONTAB}" | grep -q "NightCap Wind Down"; then
+    if echo "${CURRENT_CRONTAB}" | grep -q "NightCap-managed"; then
         echo "Updating existing NightCap cron entry..."
-        NEW_CRONTAB="$(echo "${CURRENT_CRONTAB}" | grep -v "NightCap Wind Down")"
+        NEW_CRONTAB="$(echo "${CURRENT_CRONTAB}" | grep -v "NightCap-managed")"
         if [[ -n "${NEW_CRONTAB}" ]]; then
             echo -e "${NEW_CRONTAB}\n${CRON_JOB}" | crontab -
         else
@@ -56,7 +56,7 @@ install_cron() {
 
     echo "Cron installation complete!"
     echo "Current crontab entry:"
-    crontab -l | grep "NightCap"
+    crontab -l | grep "NightCap" || true
 }
 
 install_user_systemd() {
@@ -73,7 +73,7 @@ After=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=${NOTIFY_SCRIPT} "NightCap Wind Down 🍷" "Time to step away from the screen!" "normal"
+ExecStart="${NOTIFY_SCRIPT}" "NightCap Wind Down 🍷" "Time to step away from the screen!" "normal"
 Environment=DISPLAY=${DISPLAY:-:0}
 Environment=DBUS_SESSION_BUS_ADDRESS=${DBUS_SESSION_BUS_ADDRESS:-"unix:path=/run/user/%U/bus"}
 EOF
